@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculadora de Espaço (S) e Taxa Efetiva – Juros no Espaço</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f4f8;
+      margin: 0;
+      padding: 20px;
+      color: #333;
+    }
+    h1 {
+      text-align: center;
+      color: #1a5c38;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    h2 {
+      color: #1a5c38;
+      margin-top: 0;
+    }
+    .input-group {
+      margin: 16px 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+    label {
+      min-width: 200px;
+      font-weight: bold;
+    }
+    input[type="number"] {
+      padding: 10px;
+      width: 180px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 1rem;
+    }
+    .result {
+      font-weight: bold;
+      color: #d32f2f;
+      min-width: 200px;
+    }
+    .classificacao {
+      padding: 15px;
+      border-radius: 8px;
+      font-weight: bold;
+      margin-top: 20px;
+      text-align: center;
+    }
+    .otimo { background: #4caf50; color: white; }
+    .bom { background: #8bc34a; color: white; }
+    .alerta { background: #ffeb3b; color: black; }
+    .perigo { background: #ff9800; color: white; }
+    .critico { background: #f44336; color: white; }
+    .estacionario { background: #9e9e9e; color: white; }
+    .prejuizo { background: #673ab7; color: white; }
+    .error { background: #f44336; color: white; }
+    .note {
+      font-size: 0.9rem;
+      color: #555;
+      margin-top: 8px;
+    }
+    footer {
+      text-align: center;
+      margin-top: 40px;
+      color: #777;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Calculadora de Espaço (S) e Taxa Efetiva</h1>
+  <p style="text-align:center; color:#555;">
+    Por <strong>Cosme Silva</strong> • @c0smematematica<br>
+    Estime S com base em M, lucro observado (dM/dt) e i nominal<br>
+    <strong>Suporte a lucro zero e prejuízo</strong>
+  </p>
+
+  <!-- INPUTS -->
+  <div class="card">
+    <h2>Parâmetros de Entrada</h2>
+
+    <div class="input-group">
+      <label>Montante Atual (M):</label>
+      <input type="number" id="M" value="112" step="0.01" min="0" onchange="atualizarCalculos()">
+      <span class="note">Valor atual observado do montante</span>
+    </div>
+
+    <div class="input-group">
+      <label>Lucro Observado (dM/dt):</label>
+      <input type="number" id="lucro" value="8" step="any" onchange="atualizarCalculos()">
+      <span class="note">Lucro positivo, zero ou prejuízo (negativo)</span>
+    </div>
+
+    <div class="input-group">
+      <label>Taxa Nominal (i):</label>
+      <input type="number" id="i" value="0.1" step="0.001" min="0" max="1" onchange="atualizarCalculos()">
+      <span class="note">Taxa anual esperada (ex: 0.1 = 10%)</span>
+    </div>
+  </div>
+
+  <!-- RESULTADOS -->
+  <div class="card">
+    <h2>Resultados</h2>
+
+    <div class="input-group">
+      <label>Espaço Estimado (S):</label>
+      <span class="result" id="S_estimado">—</span>
+    </div>
+
+    <div class="input-group">
+      <label>Taxa Efetiva (i_efetiva):</label>
+      <span class="result" id="i_efetiva">—</span>
+    </div>
+
+    <div id="classificacao" class="classificacao">—</div>
+
+    <div class="note" style="margin-top:20px;">
+      <strong>Fórmulas usadas:</strong><br>
+      S = M / (1 - (lucro / (i * M)))<br>
+      i_efetiva = i × (1 – M/S)<br>
+      <strong>Prejuízo (lucro < 0)</strong> indica decrescimento ativo.<br>
+      <strong>Lucro = 0</strong> indica equilíbrio ou saturação.
+    </div>
+  </div>
+
+  <footer>
+    Calculadora desenvolvida por Cosme Silva • Juros no Espaço<br>
+    Matemática Financeira Sustentável • @c0smematematica
+  </footer>
+</div>
+
+<script>
+// Função principal para calcular S, i_efetiva e classificação
+function atualizarCalculos() {
+  let M = parseFloat(document.getElementById('M').value) || 0;
+  let lucro = parseFloat(document.getElementById('lucro').value) || 0;
+  let i = parseFloat(document.getElementById('i').value) || 0;
+
+  let S_estimado = document.getElementById('S_estimado');
+  let i_efetiva_elem = document.getElementById('i_efetiva');
+  let classificacao = document.getElementById('classificacao');
+  classificacao.className = "classificacao"; // Reset
+
+  // Validação inicial
+  if (i <= 0 || M <= 0) {
+    S_estimado.textContent = "—";
+    i_efetiva_elem.textContent = "—";
+    classificacao.textContent = "Insira valores válidos (M > 0, i > 0)";
+    classificacao.classList.add("error");
+    return;
+  }
+
+  // Caso lucro = 0 (equilíbrio / saturação)
+  if (lucro === 0) {
+    S_estimado.textContent = M.toFixed(2) + " (saturação ou equilíbrio)";
+    i_efetiva_elem.textContent = "0.00%";
+    classificacao.classList.add("estacionario");
+    classificacao.textContent = "Estacionário: Crescimento zero (saturação ou equilíbrio)";
+    return;
+  }
+
+  // Caso lucro negativo (prejuízo)
+  if (lucro < 0) {
+    S_estimado.textContent = "Não aplicável (prejuízo)";
+    i_efetiva_elem.textContent = (i * (1 - M / M)).toFixed(4) + "%"; // i_efetiva negativa
+    classificacao.classList.add("prejuizo");
+    classificacao.textContent = "Prejuízo: Decrescimento ativo – risco de perda de valor";
+    return;
+  }
+
+  // Lucro positivo: cálculo normal
+  let denominator = 1 - (lucro / (i * M));
+
+  if (denominator <= 0 || isNaN(denominator) || !isFinite(denominator)) {
+    S_estimado.textContent = "Inválido (denominator ≤ 0)";
+    i_efetiva_elem.textContent = "—";
+    classificacao.textContent = "Dados inválidos – lucro muito alto para i informado";
+    classificacao.classList.add("error");
+    return;
+  }
+
+  let S = M / denominator;
+  let i_efetiva = i * (1 - M / S);
+
+  // Atualiza resultados
+  S_estimado.textContent = S.toFixed(2);
+  i_efetiva_elem.textContent = (i_efetiva * 100).toFixed(2) + "%";
+
+  // Classificação expandida em 6 zonas
+  let ratio_MS = M / S;
+  let ratio_i_efetiva = i_efetiva / i;
+
+  if (ratio_MS < 0.5 && ratio_i_efetiva > 0.5) {
+    classificacao.classList.add("otimo");
+    classificacao.textContent = "Ótimo: Espaço amplo, crescimento forte";
+  } else if (ratio_MS < 0.8 && ratio_i_efetiva > 0.1) {
+    classificacao.classList.add("bom");
+    classificacao.textContent = "Bom: Espaço confortável, crescimento sustentável";
+  } else if (ratio_MS < 1 && ratio_i_efetiva > 0) {
+    classificacao.classList.add("alerta");
+    classificacao.textContent = "Alerta: Próximo do limite, desacelerando";
+  } else if (ratio_MS >= 1 && i_efetiva < 0) {
+    classificacao.classList.add("perigo");
+    classificacao.textContent = "Perigo: Ultrapassou o limite, decréscimo iminente";
+  } else if (lucro === 0) {
+    classificacao.classList.add("estacionario");
+    classificacao.textContent = "Estacionário: Crescimento zero (saturação ou equilíbrio)";
+  } else {
+    classificacao.classList.add("critico");
+    classificacao.textContent = "Crítico: Saturado, crescimento zero ou negativo";
+  }
+}
+
+// Inicializa e escuta inputs
+window.onload = atualizarCalculos;
+document.querySelectorAll('input').forEach(inp => {
+  inp.addEventListener('input', atualizarCalculos);
+});
+</script>
+
+</body>
+</html>
